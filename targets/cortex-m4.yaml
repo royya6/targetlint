@@ -1,0 +1,10 @@
+arch: "ARM Cortex-M4F"
+ram_bytes: 131072
+stack_bytes: 16384
+has_heap: true
+has_stdlib: false
+has_fpu: true
+clock_hz: 168000000
+watchdog_timeout_ms: 5000
+word_size_bits: 32
+safety_critical: false

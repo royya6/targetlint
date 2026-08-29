@@ -1,0 +1,10 @@
+arch: "x86-64 Linux"
+ram_bytes: 8589934592
+stack_bytes: 8388608
+has_heap: true
+has_stdlib: true
+has_fpu: true
+clock_hz: 3000000000
+watchdog_timeout_ms: null
+word_size_bits: 64
+safety_critical: false
