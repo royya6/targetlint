@@ -1,0 +1,10 @@
+arch: "ARM Cortex-M0"
+ram_bytes: 32768
+stack_bytes: 8192
+has_heap: false
+has_stdlib: false
+has_fpu: false
+clock_hz: 16000000
+watchdog_timeout_ms: 2000
+word_size_bits: 32
+safety_critical: true
