@@ -1,68 +1,94 @@
-# IBM Hackathon GitHub Project Template
+# targetlint
 
-This GitHub project template is for IBM Hackathon projects. It includes pre-configured security files to help prevent accidental credential commits and potential account suspension during the hackathon.
+Target-aware static analyser for embedded C.
 
-## 🚀 Quick Start
+## What it does
 
-1. **Use this template to create your project:**
-   - Click "Use this template" button above and select "Create a new repository"
-   - Name your repository
-   - Click "Create repository"
+targetlint cross-references C source code against a YAML hardware target profile to find constraint violations that are invisible to conventional analysers like cppcheck or clang-tidy.
 
-2. **Clone your new repository:**
+## The problem
 
-   ```bash
-   git clone https://github.com/HACKATHON-ORG/your-repo-name.git
-   cd your-repo-name
-   ```
+`cppcheck` and `clang-tidy` analyse code in isolation — they have no concept of your deployment target.
 
-3. **Set up environment variables:**
+| Code | Linux | Bare-metal Cortex-M0 |
+|------|-------|----------------------|
+| `malloc()` | fine | silent crash — no heap |
+| `printf()` | fine | links but does nothing — no stdlib |
+| `float` arithmetic | fine | compiles, runs, costs 10 KB of flash and 10× the CPU time — no FPU |
 
-   ```bash
-   # Copy the example file
-   cp .env.example .env
+targetlint knows the difference. The compiler does not.
 
-   # Edit .env with your actual credentials
-   # Use your preferred editor (nano, vim, code, etc.)
-   nano .env
-   ```
+## Installation
 
-4. **Verify .gitignore is working:**
+```bash
+pip install -e .
+```
 
-   ```bash
-   # This should NOT show .env file
-   git status
+## Usage
 
-   # This should confirm .env is ignored
-   git check-ignore -v .env
-   ```
+```bash
+# Markdown report (stdout)
+targetlint --source path/to/file.c --target path/to/target.yaml
 
-5. **Start developing!**
+# Self-contained HTML report
+targetlint --source path/to/file.c --target path/to/target.yaml --html
+```
 
-## 🔒 Security Features
+## Example — same code, three targets
 
-This template includes:
+```
+cortex-m0:  14 findings (7 critical, 6 high, 0 medium, 1 low)
+cortex-m4:   8 findings (5 critical, 2 high, 1 medium, 0 low)
+linux-x86:   3 findings (0 critical, 1 high, 2 medium, 0 low)
+```
 
-- **`.gitignore`** - Prevents committing credentials and live session files
-- **`.bobignore`** - Prevents AI assistants from logging credentials
-- **`.env.example`** - Template for your environment variables
+## Target profile
 
-## 📋 Before Every Commit
+Target profiles are YAML files that describe the hardware constraints of your deployment target. Example — `targets/cortex-m0.yaml`:
 
-Always run this checklist:
+```yaml
+arch: "ARM Cortex-M0"
+ram_bytes: 32768
+stack_bytes: 8192
+has_heap: false
+has_stdlib: false
+has_fpu: false
+clock_hz: 16000000
+watchdog_timeout_ms: 2000
+word_size_bits: 32
+safety_critical: true
+```
 
-- [ ] Reviewed `git diff` for sensitive data
-- [ ] No hardcoded API keys or passwords
-- [ ] `.env` file is NOT in staged changes
-- [ ] No files with "credential" or "secret" in name
-- [ ] Used environment variables for all credentials
+| Field | Type | Description |
+|-------|------|-------------|
+| `arch` | string | Human-readable architecture name |
+| `ram_bytes` | int | Total RAM in bytes |
+| `stack_bytes` | int | Stack budget in bytes |
+| `has_heap` | bool | Whether dynamic allocation is available |
+| `has_stdlib` | bool | Whether C standard library is available |
+| `has_fpu` | bool | Whether a hardware FPU is present |
+| `clock_hz` | int | Target clock frequency in Hz |
+| `watchdog_timeout_ms` | int \| null | Watchdog timeout in milliseconds; `null` if none |
+| `word_size_bits` | int | Native word size in bits |
+| `safety_critical` | bool | Whether MISRA/safety rules apply |
 
-## 🆘 Need Help?
+## Rules
 
-- Read [SECURITY.md](SECURITY.MD) for detailed guidelines
-- Contact hackathon support through mentor channel
-- Ask in the hackathon Slack workspace
+Five rule modules run on every analysis:
 
----
+| Module | What it checks |
+|--------|----------------|
+| `memory.py` | Heap usage, null-check omissions, stack array size |
+| `stdlib.py` | `printf`, `stdio.h`, `stdlib.h`, `string.h`, `strcpy`/`strcat` |
+| `timing.py` | Hardcoded clock assumptions, busy-wait loops |
+| `hardware.py` | FPU assumptions, word size, inline assembly |
+| `safety.py` | Recursion, watchdog kicks, MISRA basics |
 
-**Remember:** Security is everyone's responsibility. When in doubt, ask for help!
+## Built with
+
+[IBM Bob 2.0](https://www.ibm.com/products/bob)
+
+- **Agent mode** — drove implementation across the full codebase
+- **Parallel subagents** — implemented all five rule modules simultaneously
+- **Document understanding** — informed rule design from ARM architecture references and CWE data
+- **Plan mode** — designed the architecture before implementation
