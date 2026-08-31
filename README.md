@@ -83,12 +83,3 @@ Five rule modules run on every analysis:
 | `timing.py` | Hardcoded clock assumptions, busy-wait loops |
 | `hardware.py` | FPU assumptions, word size, inline assembly |
 | `safety.py` | Recursion, watchdog kicks, MISRA basics |
-
-## Built with
-
-[IBM Bob 2.0](https://www.ibm.com/products/bob)
-
-- **Agent mode** — drove implementation across the full codebase
-- **Parallel subagents** — implemented all five rule modules simultaneously
-- **Document understanding** — informed rule design from ARM architecture references and CWE data
-- **Plan mode** — designed the architecture before implementation
